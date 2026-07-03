@@ -12,6 +12,7 @@ const RegisterUser = () => {
   };
   const [formData, setFormData] = useState(initialState);
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -37,8 +38,8 @@ const RegisterUser = () => {
     if (!formData.age.trim()) {
       newErrors.age="Age is required"
     }
-    else if (Number(formData.age) < 18) {
-      newErrors.age = "Age must be at least 18.";
+    else if (Number(formData.age) < 0) {
+      newErrors.age = "Age cannot be less than 0.";
     }
 
     if (!formData.gender) {
@@ -57,10 +58,23 @@ const RegisterUser = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
     console.log(formData);
+    setLoading(true)
+    const data = await fetch("https://dummyjson.com/users/add", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(formData),
+    })
+      .then((res) => res.json())
+      .then((data) => console.log(data));
+    setFormData(initialState)
+    setLoading(false)
+    alert("User registerd successfully")
   };
   return (
     <div className="register">
@@ -188,7 +202,7 @@ const RegisterUser = () => {
         </div>
 
         <button className="submit" type="submit">
-          Register
+          {loading?"Please wait":"Register"}
         </button>
         <button
           className="clear"
