@@ -19,50 +19,26 @@ const RegisterUser = () => {
       ...formData,
       [e.target.name]: e.target.value,
     });
-
-    setErrors({
-      ...errors,
-      [e.target.name]: "",
-    });
-  };
-
-  const validate = () => {
-    let newErrors = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = "Name is required";
-    }
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-    }
-    if (!formData.age.trim()) {
-      newErrors.age="Age is required"
-    }
-    else if (Number(formData.age) < 0) {
-      newErrors.age = "Age cannot be less than 0.";
-    }
-
-    if (!formData.gender) {
-      newErrors.gender = "Gender is required"
-    }
-
-    if (formData.password.length < 8) {
-      newErrors.password = "Password must be atleast 8 digit"
-    }
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match.";
-    }
-
-    setErrors(newErrors);
-
-    return Object.keys(newErrors).length === 0;
+    setErrors((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.validity.valid
+        ? ""
+        : e.target.validationMessage,
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validate()) return;
-    console.log(formData);
-    setLoading(true)
+    if (!e.target.checkValidity()) return;
+    if (formData.confirmPassword !== formData.password) {
+      setErrors((prev) => ({
+        ...prev,
+        ["confirmPassword"]:
+          "Current password do not match with confirm password",
+      }));
+      return;
+    }
+    setLoading(true);
     const data = await fetch("https://dummyjson.com/users/add", {
       method: "POST",
       headers: {
@@ -71,11 +47,17 @@ const RegisterUser = () => {
       body: JSON.stringify(formData),
     })
       .then((res) => res.json())
-      .then((data) => console.log(data));
-    setFormData(initialState)
-    setLoading(false)
-    alert("User registerd successfully")
+      .then((data) => {
+        alert(`User registerd successfully id: ${data.id}`);
+        console.log(data);
+      });
+    setFormData(initialState);
+
+    setLoading(false);
   };
+
+
+
   return (
     <div className="register">
       <h2 className="title">Register User</h2>
@@ -88,11 +70,15 @@ const RegisterUser = () => {
             type="text"
             placeholder="Enter Name"
             name="name"
+            required
+            minLength={3}
             value={formData.name}
             onChange={handleChange}
+            disabled={loading}
           />
           {errors.name && <p className="error">{errors.name}</p>}
         </div>
+
         <div className="inputField">
           <label className="label" htmlFor="email">
             Email*
@@ -101,22 +87,29 @@ const RegisterUser = () => {
             type="email"
             placeholder="Enter Email"
             name="email"
+            required
             value={formData.email}
             onChange={handleChange}
+            disabled={loading}
           />
           {errors.email && <p className="error">{errors.email}</p>}
         </div>
 
         <div className="inputField">
           <label className="label" htmlFor="phone">
-            Phone
+            Phone*
           </label>
           <input
             type="text"
             placeholder="Enter Phone no."
             name="phone"
+            required
+            pattern="[0-9]{}"
+            minLength={10}
+            maxLength={15}
             value={formData.phone}
             onChange={handleChange}
+            disabled={loading}
           />
           {errors.phone && <p className="error">{errors.phone}</p>}
         </div>
@@ -129,8 +122,12 @@ const RegisterUser = () => {
             type="number"
             placeholder="Enter age"
             name="age"
+            required
+            min={0}
+            max={120}
             value={formData.age}
             onChange={handleChange}
+            disabled={loading}
           />
           {errors.age && <p className="error">{errors.age}</p>}
         </div>
@@ -144,8 +141,10 @@ const RegisterUser = () => {
               id="male"
               name="gender"
               value="male"
+              required
               checked={formData.gender === "male"}
               onChange={handleChange}
+              disabled={loading}
             />
             <label htmlFor="male">Male</label>
 
@@ -154,8 +153,10 @@ const RegisterUser = () => {
               id="female"
               name="gender"
               value="female"
+              required
               checked={formData.gender === "female"}
               onChange={handleChange}
+              disabled={loading}
             />
             <label htmlFor="female">Female</label>
 
@@ -163,9 +164,11 @@ const RegisterUser = () => {
               type="radio"
               id="other"
               name="gender"
+              required
               value="other"
               checked={formData.gender === "other"}
               onChange={handleChange}
+              disabled={loading}
             />
             <label htmlFor="other">Other</label>
           </div>
@@ -180,11 +183,16 @@ const RegisterUser = () => {
             type="password"
             placeholder="Enter password"
             name="password"
+            required
+            minLength={8}
             value={formData.password}
             onChange={handleChange}
+            disabled={loading}
+            autoComplete="true"
           />
           {errors.password && <p className="error">{errors.password}</p>}
         </div>
+
         <div className="inputField">
           <label className="label" htmlFor="confirm-password">
             Confirm Password*
@@ -193,21 +201,25 @@ const RegisterUser = () => {
             type="password"
             placeholder="Confirm password"
             name="confirmPassword"
+            required
             value={formData.confirmPassword}
             onChange={handleChange}
+            disabled={loading}
+            autoComplete="true"
           />
           {errors.confirmPassword && (
             <p className="error">{errors.confirmPassword}</p>
           )}
         </div>
 
-        <button className="submit" type="submit">
-          {loading?"Please wait":"Register"}
+        <button className="submit" type="submit" disabled={loading}>
+          {loading ? "Please wait" : "Register"}
         </button>
         <button
           className="clear"
           type="reset"
           onClick={() => setFormData(initialState)}
+          disabled={loading}
         >
           Clear form
         </button>
